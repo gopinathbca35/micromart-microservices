@@ -1,0 +1,67 @@
+services:
+  user-service:
+    build: ./services/user-service
+    image: micromart-user-service:1.0
+    environment:
+      DB_PATH: /data/users.sqlite
+    volumes:
+      - user_data:/data
+    restart: unless-stopped
+    expose:
+      - "5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/users/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  product-service:
+    build: ./services/product-service
+    image: micromart-product-service:1.0
+    environment:
+      DB_PATH: /data/products.sqlite
+    volumes:
+      - product_data:/data
+    restart: unless-stopped
+    expose:
+      - "5001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/api/products/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  order-service:
+    build: ./services/order-service
+    image: micromart-order-service:1.0
+    environment:
+      DB_PATH: /data/orders.sqlite
+    volumes:
+      - order_data:/data
+    restart: unless-stopped
+    expose:
+      - "5002"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5002/api/orders/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    image: micromart-frontend:1.0
+    ports:
+      - "80:80"
+    depends_on:
+      user-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  user_data:
+  product_data:
+  order_data:
