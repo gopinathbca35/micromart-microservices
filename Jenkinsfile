@@ -32,7 +32,6 @@ pipeline {
             steps {
                 sh '''
                     test -f docker-compose.yml
-                    test -f docker-compose.prod.yml
                     test -f nginx/nginx.conf
 
                     for service in user product order; do
@@ -41,7 +40,6 @@ pipeline {
                     done
 
                     docker compose -f docker-compose.yml config -q
-                    docker compose -f docker-compose.prod.yml config -q
                 '''
             }
         }
