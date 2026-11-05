@@ -59,24 +59,19 @@ pipeline {
 
         stage('Push to ECR') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-access-key'
-                ]]) {
-                    sh '''
-                        aws ecr get-login-password \
-                        --region ${AWS_REGION} | \
-                        docker login \
-                        --username AWS \
-                        --password-stdin ${ECR_REGISTRY}
+               sh '''
+                   aws sts get-caller-identity
 
-                        for service in user product order frontend; do
-                            docker push \
-                            ${ECR_REGISTRY}/${service}-service:${IMAGE_TAG}
-                        done
-                    '''
-                }
-            }
+            aws ecr get-login-password --region ap-south-1 |
+            docker login --username AWS --password-stdin \
+            372951851936.dkr.ecr.ap-south-1.amazonaws.com
+
+            docker push 372951851936.dkr.ecr.ap-south-1.amazonaws.com/user-service:${IMAGE_TAG}
+            docker push 372951851936.dkr.ecr.ap-south-1.amazonaws.com/product-service:${IMAGE_TAG}
+            docker push 372951851936.dkr.ecr.ap-south-1.amazonaws.com/order-service:${IMAGE_TAG}
+            docker push 372951851936.dkr.ecr.ap-south-1.amazonaws.com/frontend-service:${IMAGE_TAG}
+        '''
+    }
         }
 
         stage('Prepare Deployment') {
