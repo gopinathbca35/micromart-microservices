@@ -81,6 +81,7 @@ pipeline {
         }
 
         
+
 stage('Deploy to EC2') {
     steps {
         withCredentials([
@@ -97,35 +98,34 @@ stage('Deploy to EC2') {
                     -o StrictHostKeyChecking=accept-new \
                     -o IdentitiesOnly=yes \
                     ${SSH_USER}@${EC2_HOST} "
+                        set -e
 
-                    set -e
+                        cd /home/ubuntu/micromart-microservices
 
-                    cd micromart-microservices
+                        export AWS_DEFAULT_REGION=${AWS_REGION}
+                        export ECR_REGISTRY=${ECR_REGISTRY}
+                        export IMAGE_TAG=${IMAGE_TAG}
 
-                    export AWS_DEFAULT_REGION=${AWS_REGION}
-                    export ECR_REGISTRY=${ECR_REGISTRY}
-                    export IMAGE_TAG=${IMAGE_TAG}
+                        echo 'ECR Registry: '\$ECR_REGISTRY
+                        echo 'Image Tag: '\$IMAGE_TAG
 
-                    echo 'Logging into ECR...'
+                        echo 'Logging into ECR...'
 
-                    aws ecr get-login-password \
-                        --region ${AWS_REGION} |
-                    sudo docker login \
-                        --username AWS \
-                        --password-stdin ${ECR_REGISTRY}
+                        aws ecr get-login-password \
+                            --region ${AWS_REGION} |
+                        sudo docker login \
+                            --username AWS \
+                            --password-stdin ${ECR_REGISTRY}
 
-                    echo 'Pulling ECR images...'
+                        echo 'Pulling ECR images...'
+                        sudo -E docker compose pull
 
-                    sudo docker compose pull
+                        echo 'Starting containers...'
+                        sudo -E docker compose up -d
 
-                    echo 'Starting containers...'
-
-                    sudo docker compose up -d
-
-                    echo 'Checking deployment...'
-
-                    sudo docker compose ps
-                "
+                        echo 'Checking deployment...'
+                        sudo docker compose ps
+                    "
             '''
         }
     }
