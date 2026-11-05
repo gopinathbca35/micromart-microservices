@@ -12,7 +12,6 @@ pipeline {
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
         EC2_HOST = '15.252.129.211'
-        DEPLOY_DIR = '/opt/microservices-app'
 
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
@@ -101,7 +100,7 @@ stage('Deploy to EC2') {
 
                     set -e
 
-                    cd ${DEPLOY_DIR}
+                    cd micromart-microservices
 
                     export AWS_DEFAULT_REGION=${AWS_REGION}
                     export ECR_REGISTRY=${ECR_REGISTRY}
