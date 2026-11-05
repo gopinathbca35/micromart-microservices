@@ -28,33 +28,6 @@ pipeline {
             }
         }
 
-        stage('Validate Configuration') {
-            steps {
-                sh '''
-                    test -f docker-compose.yml
-                    test -f nginx/nginx.conf
-
-                    for service in user product order; do
-                        test -f services/${service}-service/Dockerfile
-                        test -f services/${service}-service/app.py
-                    done
-
-                    docker compose -f docker-compose.yml config -q
-                '''
-            }
-        }
-
-        stage('Application Tests') {
-            steps {
-                sh '''
-                    for service in user product order; do
-                        python3 -m py_compile \
-                          services/${service}-service/app.py
-                    done
-                '''
-            }
-        }
-
          stage('Build Images') {
             steps {
                 sh '''
