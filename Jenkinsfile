@@ -90,10 +90,8 @@ pipeline {
                             --username AWS \
                             --password-stdin ${ECR_REGISTRY} &&
 
-                            sudo -E docker compose \
-                            -f docker-compose.prod.yml pull &&
-
-                        "
+                            sudo docker compose up -d \
+                              "
                     '''
                 }
             }
