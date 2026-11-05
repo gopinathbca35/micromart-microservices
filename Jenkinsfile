@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -132,7 +131,7 @@ stage('Deploy to EC2') {
         }
     }
 }
-
+    }
 
     post {
         success {
