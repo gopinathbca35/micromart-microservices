@@ -49,7 +49,7 @@ pipeline {
         stage('Tag Images') {
             steps {
                 sh '''
-                    for service in user product order; do
+                    for service in user product order frontend; do
                         docker tag ${service}-service:${IMAGE_TAG} \
                         ${ECR_REGISTRY}/${service}-service:${IMAGE_TAG}
                     done
@@ -70,7 +70,7 @@ pipeline {
                         --username AWS \
                         --password-stdin ${ECR_REGISTRY}
 
-                        for service in user product order; do
+                        for service in user product order frontend; do
                             docker push \
                             ${ECR_REGISTRY}/${service}-service:${IMAGE_TAG}
                         done
