@@ -1,7 +1,6 @@
 services:
   user-service:
-    build: ./services/user-service
-    image: micromart-user-service:1.0
+    image: 372951851936.dkr.ecr.us-east-1.amazonaws.com/micromart-user-service:1.0
     environment:
       DB_PATH: /data/users.sqlite
     volumes:
@@ -16,8 +15,7 @@ services:
       retries: 3
 
   product-service:
-    build: ./services/product-service
-    image: micromart-product-service:1.0
+    image: 372951851936.dkr.ecr.us-east-1.amazonaws.com/micromart-product-service:1.0
     environment:
       DB_PATH: /data/products.sqlite
     volumes:
@@ -32,8 +30,7 @@ services:
       retries: 3
 
   order-service:
-    build: ./services/order-service
-    image: micromart-order-service:1.0
+    image: 372951851936.dkr.ecr.us-east-1.amazonaws.com/micromart-order-service:1.0
     environment:
       DB_PATH: /data/orders.sqlite
     volumes:
@@ -48,8 +45,7 @@ services:
       retries: 3
 
   frontend:
-    build: ./frontend
-    image: micromart-frontend:1.0
+    image: 372951851936.dkr.ecr.us-east-1.amazonaws.com/micromart-frontend:1.0
     ports:
       - "80:80"
     depends_on:
