@@ -57,6 +57,57 @@ pipeline {
             }
         }
 
+         stage('Build Images') {
+            steps {
+                sh '''
+                    docker build -t user-service:${IMAGE_TAG} \
+                        services/user-service
+
+                    docker build -t product-service:${IMAGE_TAG} \
+                        services/product-service
+
+                    docker build -t order-service:${IMAGE_TAG} \
+                        services/order-service
+                   
+                    docker build -t frontend-service:${IMAGE_TAG} \
+                        services/frontend-service     
+                '''
+            }
+        }
+
+        stage('Tag Images') {
+            steps {
+                sh '''
+                    for service in user product order; do
+                        docker tag ${service}-service:${IMAGE_TAG} \
+                        ${ECR_REGISTRY}/${service}-service:${IMAGE_TAG}
+                    done
+                '''
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-access-key'
+                ]]) {
+                    sh '''
+                        aws ecr get-login-password \
+                        --region ${AWS_REGION} | \
+                        docker login \
+                        --username AWS \
+                        --password-stdin ${ECR_REGISTRY}
+
+                        for service in user product order; do
+                            docker push \
+                            ${ECR_REGISTRY}/${service}-service:${IMAGE_TAG}
+                        done
+                    '''
+                }
+            }
+        }
+
         stage('Prepare Deployment') {
             steps {
                 sshagent(credentials: ['ec2-ssh-key']) {
