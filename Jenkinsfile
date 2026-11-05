@@ -117,11 +117,11 @@ stage('Deploy to EC2') {
 
                     echo 'Pulling ECR images...'
 
-                    sudo -E docker compose pull
+                    sudo docker compose pull
 
                     echo 'Starting containers...'
 
-                    sudo -E docker compose up -d
+                    sudo docker compose up -d
 
                     echo 'Checking deployment...'
 
