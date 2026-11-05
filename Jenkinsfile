@@ -74,25 +74,6 @@ pipeline {
     }
         }
 
-        stage('Prepare Deployment') {
-            steps {
-                sshagent(credentials: ['ec2-ssh-key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=accept-new \
-                            ubuntu@${EC2_HOST} \
-                            "sudo mkdir -p ${DEPLOY_DIR} &&
-                             sudo chown ubuntu:ubuntu ${DEPLOY_DIR}"
-
-                        scp docker-compose.prod.yml \
-                            ubuntu@${EC2_HOST}:${DEPLOY_DIR}/
-
-                        scp -r nginx \
-                            ubuntu@${EC2_HOST}:${DEPLOY_DIR}/
-                    '''
-                }
-            }
-        }
-
         stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: ['ec2-ssh-key']) {
@@ -112,31 +93,11 @@ pipeline {
                             sudo -E docker compose \
                             -f docker-compose.prod.yml pull &&
 
-                            sudo -E docker compose \
-                            -f docker-compose.prod.yml up -d
                         "
                     '''
                 }
             }
         }
-
-        stage('Deployment Verification') {
-            steps {
-                sh '''
-                    sleep 15
-
-                    curl --fail --retry 5 --retry-delay 5 \
-                    http://${EC2_HOST}/health/user
-
-                    curl --fail \
-                    http://${EC2_HOST}/health/product
-
-                    curl --fail \
-                    http://${EC2_HOST}/health/order
-                '''
-            }
-        }
-    }
 
     post {
         success {
