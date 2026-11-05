@@ -28,9 +28,11 @@ pipeline {
             }
         }
 
-         stage('Build Images') {
+        stage('Build Images') {
             steps {
                 sh '''
+                    set -e
+
                     docker build -t user-service:${IMAGE_TAG} \
                         services/user-service
 
@@ -39,9 +41,9 @@ pipeline {
 
                     docker build -t order-service:${IMAGE_TAG} \
                         services/order-service
-                   
+
                     docker build -t frontend-service:${IMAGE_TAG} \
-                        ./frontend   
+                        ./frontend
                 '''
             }
         }
@@ -49,6 +51,8 @@ pipeline {
         stage('Tag Images') {
             steps {
                 sh '''
+                    set -e
+
                     for service in user product order frontend; do
                         docker tag ${service}-service:${IMAGE_TAG} \
                         ${ECR_REGISTRY}/${service}-service:${IMAGE_TAG}
@@ -59,43 +63,66 @@ pipeline {
 
         stage('Push to ECR') {
             steps {
-               sh '''
-                   aws sts get-caller-identity
+                sh '''
+                    set -e
 
-            aws ecr get-login-password --region ap-south-1 |
-            docker login --username AWS --password-stdin \
-            372951851936.dkr.ecr.ap-south-1.amazonaws.com
+                    aws sts get-caller-identity
 
-            docker push 372951851936.dkr.ecr.ap-south-1.amazonaws.com/user-service:${IMAGE_TAG}
-            docker push 372951851936.dkr.ecr.ap-south-1.amazonaws.com/product-service:${IMAGE_TAG}
-            docker push 372951851936.dkr.ecr.ap-south-1.amazonaws.com/order-service:${IMAGE_TAG}
-            docker push 372951851936.dkr.ecr.ap-south-1.amazonaws.com/frontend-service:${IMAGE_TAG}
-        '''
-    }
+                    aws ecr get-login-password \
+                        --region ${AWS_REGION} |
+                    docker login \
+                        --username AWS \
+                        --password-stdin ${ECR_REGISTRY}
+
+                    for service in user product order frontend; do
+                        docker push \
+                        ${ECR_REGISTRY}/${service}-service:${IMAGE_TAG}
+                    done
+                '''
+            }
         }
 
         stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: ['ec2-ssh-key']) {
                     sh '''
-                        ssh ubuntu@${EC2_HOST} "
-                            cd ${DEPLOY_DIR} &&
-                            export AWS_DEFAULT_REGION=${AWS_REGION} &&
-                            export ECR_REGISTRY=${ECR_REGISTRY} &&
-                            export IMAGE_TAG=${IMAGE_TAG} &&
+                        set -e
 
-                            aws ecr get-login-password \
-                            --region ${AWS_REGION} |
-                            sudo docker login \
-                            --username AWS \
-                            --password-stdin ${ECR_REGISTRY} &&
+                        ssh -o StrictHostKeyChecking=accept-new \
+                            ubuntu@${EC2_HOST} "
+                                set -e
 
-                            sudo docker compose up -d \
-                              "
+                                cd ${DEPLOY_DIR}
+
+                                export AWS_DEFAULT_REGION=${AWS_REGION}
+                                export ECR_REGISTRY=${ECR_REGISTRY}
+                                export IMAGE_TAG=${IMAGE_TAG}
+
+                                echo 'Authenticating with Amazon ECR...'
+
+                                aws ecr get-login-password \
+                                    --region ${AWS_REGION} |
+                                sudo docker login \
+                                    --username AWS \
+                                    --password-stdin ${ECR_REGISTRY}
+
+                                echo 'Pulling latest application images...'
+
+                                sudo -E docker compose pull
+
+                                echo 'Deploying application...'
+
+                                sudo -E docker compose up -d
+
+                                echo 'Checking container status...'
+
+                                sudo docker compose ps
+                            "
                     '''
                 }
             }
         }
+    }
 
     post {
         success {
