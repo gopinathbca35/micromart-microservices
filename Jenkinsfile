@@ -41,7 +41,7 @@ pipeline {
                         services/order-service
                    
                     docker build -t frontend-service:${IMAGE_TAG} \
-                        services/frontend-service     
+                        ./frontend   
                 '''
             }
         }
