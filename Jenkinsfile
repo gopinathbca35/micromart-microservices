@@ -82,47 +82,57 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
-            steps {
-                sshagent(credentials: ['ec2-ssh-key']) {
-                    sh '''
-                        set -e
+        
+stage('Deploy to EC2') {
+    steps {
+        withCredentials([
+            sshUserPrivateKey(
+                credentialsId: 'ec2-ssh-key',
+                keyFileVariable: 'SSH_KEY',
+                usernameVariable: 'SSH_USER'
+            )
+        ]) {
+            sh '''
+                set -e
 
-                        ssh -o StrictHostKeyChecking=accept-new \
-                            ubuntu@${EC2_HOST} "
-                                set -e
+                ssh -i "$SSH_KEY" \
+                    -o StrictHostKeyChecking=accept-new \
+                    -o IdentitiesOnly=yes \
+                    ${SSH_USER}@${EC2_HOST} "
 
-                                cd ${DEPLOY_DIR}
+                    set -e
 
-                                export AWS_DEFAULT_REGION=${AWS_REGION}
-                                export ECR_REGISTRY=${ECR_REGISTRY}
-                                export IMAGE_TAG=${IMAGE_TAG}
+                    cd ${DEPLOY_DIR}
 
-                                echo 'Authenticating with Amazon ECR...'
+                    export AWS_DEFAULT_REGION=${AWS_REGION}
+                    export ECR_REGISTRY=${ECR_REGISTRY}
+                    export IMAGE_TAG=${IMAGE_TAG}
 
-                                aws ecr get-login-password \
-                                    --region ${AWS_REGION} |
-                                sudo docker login \
-                                    --username AWS \
-                                    --password-stdin ${ECR_REGISTRY}
+                    echo 'Logging into ECR...'
 
-                                echo 'Pulling latest application images...'
+                    aws ecr get-login-password \
+                        --region ${AWS_REGION} |
+                    sudo docker login \
+                        --username AWS \
+                        --password-stdin ${ECR_REGISTRY}
 
-                                sudo -E docker compose pull
+                    echo 'Pulling ECR images...'
 
-                                echo 'Deploying application...'
+                    sudo -E docker compose pull
 
-                                sudo -E docker compose up -d
+                    echo 'Starting containers...'
 
-                                echo 'Checking container status...'
+                    sudo -E docker compose up -d
 
-                                sudo docker compose ps
-                            "
-                    '''
-                }
-            }
+                    echo 'Checking deployment...'
+
+                    sudo docker compose ps
+                "
+            '''
         }
     }
+}
+
 
     post {
         success {
