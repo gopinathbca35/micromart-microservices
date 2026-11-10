@@ -82,6 +82,7 @@ pipeline {
 
         
 
+
 stage('Deploy to EC2') {
     steps {
         withCredentials([
@@ -98,33 +99,37 @@ stage('Deploy to EC2') {
                     -o StrictHostKeyChecking=accept-new \
                     -o IdentitiesOnly=yes \
                     ${SSH_USER}@${EC2_HOST} "
-                        set -e
 
-                        cd /home/ubuntu/micromart-microservices
+                    set -e
 
-                        export AWS_DEFAULT_REGION=${AWS_REGION}
-                        export ECR_REGISTRY=${ECR_REGISTRY}
-                        export IMAGE_TAG=${IMAGE_TAG}
+                    cd /home/ubuntu/micromart-microservices
 
-                        echo 'ECR Registry: '\$ECR_REGISTRY
-                        echo 'Image Tag: '\$IMAGE_TAG
+                    export AWS_DEFAULT_REGION=${AWS_REGION}
+                    export ECR_REGISTRY=${ECR_REGISTRY}
+                    export IMAGE_TAG=${IMAGE_TAG}
 
-                        echo 'Logging into ECR...'
+                    echo 'ECR Registry: '\$ECR_REGISTRY
+                    echo 'Image Tag: '\$IMAGE_TAG
 
-                        aws ecr get-login-password \
-                            --region ${AWS_REGION} |
-                        sudo docker login \
-                            --username AWS \
-                            --password-stdin ${ECR_REGISTRY}
+                    echo 'Logging into ECR...'
 
-                        echo 'Pulling ECR images...'
-                        sudo -E docker compose pull
+                    aws ecr get-login-password \
+                        --region ${AWS_REGION} |
+                    sudo docker login \
+                        --username AWS \
+                        --password-stdin ${ECR_REGISTRY}
 
-                        echo 'Starting containers...'
-                        sudo -E docker compose up -d
+                    echo 'Pulling ECR images...'
 
-                        echo 'Checking deployment...'
-                        sudo docker compose ps
+                    sudo env ECR_REGISTRY=\$ECR_REGISTRY IMAGE_TAG=\$IMAGE_TAG docker compose pull
+
+                    echo 'Starting containers...'
+
+                    sudo env ECR_REGISTRY=\$ECR_REGISTRY IMAGE_TAG=\$IMAGE_TAG docker compose up -d
+
+                    echo 'Checking deployment...'
+
+                    sudo docker compose ps
                     "
             '''
         }
