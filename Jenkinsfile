@@ -103,7 +103,7 @@ stage('Deploy to EC2') {
                     set -e
 
                     cd /home/ubuntu/micromart-microservices
-
+                    git pull
                     export AWS_DEFAULT_REGION=${AWS_REGION}
                     export ECR_REGISTRY=${ECR_REGISTRY}
                     export IMAGE_TAG=${IMAGE_TAG}
